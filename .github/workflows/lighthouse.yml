@@ -1,0 +1,36 @@
+name: Lighthouse CI
+
+on:
+  push:
+    branches:
+      - main  # Runs when you push to the main branch
+  schedule:
+    - cron: "0 0 * * *"  # Runs daily at midnight UTC
+  workflow_dispatch:  # Allows manual triggering
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Lighthouse CI
+        run: npm install -g @lhci/cli
+
+      - name: Run Lighthouse Audit
+        run: |
+          mkdir -p lighthouse-results
+          lhci autorun --upload.target=filesystem --upload.outputDir=./lighthouse-results || echo "Lighthouse CI failed"
+
+      - name: Deploy Report to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./lighthouse-results
