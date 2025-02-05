@@ -41,6 +41,11 @@ jobs:
           mkdir -p reports
           mv ./lighthouse-results-${{ env.timestamp }} ./reports/${{ env.timestamp }}
 
+      - name: Rename Lighthouse Report to index.html
+        run: |
+          cd ./reports/${{ env.timestamp }}
+          mv *.report.html index.html
+
       - name: Update Index Page
         run: |
           # Create index.html if it doesn't exist
