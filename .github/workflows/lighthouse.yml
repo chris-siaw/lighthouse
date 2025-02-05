@@ -72,160 +72,46 @@ jobs:
           echo "seo=$SEO" >> $GITHUB_ENV
           echo "url=$URL" >> $GITHUB_ENV
 
-      - name: Update Summary Page
+      - name: Update Main Page
         run: |
-          if [ ! -f reports/summary.html ]; then
-            echo "<html><head><link rel='stylesheet' href='./style.css'></head><body><div class='container'>" > reports/summary.html
-            echo "<h1>Lighthouse Report Summary</h1><table id='summaryTable'>" >> reports/summary.html
-            echo "<tr><th>URL</th><th>Date</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/summary.html
+          # Create the file if it doesn't exist
+          if [ ! -f reports/index.html ]; then
+            echo "<html><head></head><body>" > reports/index.html
+            echo "<h1>Lighthouse Report Summary</h1><table border='1' cellspacing='0' cellpadding='5'>" >> reports/index.html
+            echo "<tr><th>Date</th><th>URL</th><th>Report Link</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/index.html
           else
-            awk '/<tr>/{flag=1} flag; /<\/table>/{flag=0}' reports/summary.html > rows.temp
+            # Extract existing rows
+            awk '/<tr>/{flag=1} flag; /<\/table>/{flag=0}' reports/index.html > rows.temp
           fi
-          echo "<html><head><link rel='stylesheet' href='./style.css'></head><body><div class='container'>" > reports/summary.html
-          echo "<h1>Lighthouse Report Summary</h1><table id='summaryTable'>" >> reports/summary.html
-          echo "<tr><th>URL</th><th>Date</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/summary.html
+
+          # Start building the updated main page
+          echo "<html><head></head><body>" > reports/index.html
+          echo "<h1>Lighthouse Report Summary</h1><table border='1' cellspacing='0' cellpadding='5'>" >> reports/index.html
+          echo "<tr><th>Date</th><th>URL</th><th>Report Link</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/index.html
+
+          # Add the new row for the current report at the top
+          echo "<tr>" >> reports/index.html
+          echo "<td>${{ env.formatted_date }}</td>" >> reports/index.html
+          echo "<td><a href='${{ env.url }}' target='_blank'>${{ env.url }}</a></td>" >> reports/index.html
+          echo "<td><a href='./${{ env.timestamp }}/index.html' target='_blank'>View Report</a></td>" >> reports/index.html
+          echo "<td>${{ env.performance }}</td>" >> reports/index.html
+          echo "<td>${{ env.accessibility }}</td>" >> reports/index.html
+          echo "<td>${{ env.best_practices }}</td>" >> reports/index.html
+          echo "<td>${{ env.seo }}</td>" >> reports/index.html
+          echo "</tr>" >> reports/index.html
+
+          # Add existing rows below
           if [ -f rows.temp ]; then
-            cat rows.temp >> reports/summary.html
+            cat rows.temp >> reports/index.html
           fi
-          echo "<tr>" >> reports/summary.html
-          echo "<td><a href='./${{ env.timestamp }}/index.html'>${{ env.url }}</a></td>" >> reports/summary.html
-          echo "<td>${{ env.formatted_date }}</td>" >> reports/summary.html
-          echo "<td>${{ env.performance }}</td>" >> reports/summary.html
-          echo "<td>${{ env.accessibility }}</td>" >> reports/summary.html
-          echo "<td>${{ env.best_practices }}</td>" >> reports/summary.html
-          echo "<td>${{ env.seo }}</td>" >> reports/summary.html
-          echo "</tr>" >> reports/summary.html
-          echo "</table></div></body></html>" >> reports/summary.html
+
+          # Close the table and HTML
+          echo "</table></body></html>" >> reports/index.html
+
+          # Clean up temporary file
           if [ -f rows.temp ]; then
             rm rows.temp
           fi
-
-      - name: Update Index Page
-        run: |
-          if [ ! -f reports/index.html ]; then
-            echo "<html><head><link rel='stylesheet' href='./style.css'></head><body><div class='container'>" > reports/index.html
-            echo "<h1>Lighthouse Reports</h1>" >> reports/index.html
-          fi
-          echo "<div class='card'><a href='./${{ env.timestamp }}/index.html'>Report ${{ env.timestamp }}</a></div>" >> reports/index.html
-          if ! grep -q "summary.html" reports/index.html; then
-            echo "<div class='card'><a href='./summary.html'>Summary of Lighthouse Scores</a></div>" >> reports/index.html
-          fi
-          echo "</div></body></html>" >> reports/index.html
-
-      - name: Add Style CSS
-        run: |
-          mkdir -p reports
-          cat <<EOF > reports/style.css
-          body {
-            font-family: 'Roboto', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f8f9fa;
-            color: #212529;
-          }
-
-          h1 {
-            font-size: 2.5rem;
-            color: #007bff;
-            text-align: center;
-            margin: 20px 0;
-          }
-
-          .container {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 20px;
-          }
-
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background-color: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-          }
-
-          table th, table td {
-            padding: 12px 15px;
-            text-align: center;
-          }
-
-          table th {
-            background-color: #28a745;
-            color: #ffffff;
-            font-weight: bold;
-          }
-
-          table tr:nth-child(even) {
-            background-color: #f2f2f2;
-          }
-
-          table tr:hover {
-            background-color: #e9ecef;
-          }
-
-          table td {
-            color: #212529;
-            font-size: 1rem;
-            text-align: center;
-          }
-
-          table td a {
-            color: #007bff;
-            text-decoration: none;
-          }
-
-          table td a:hover {
-            text-decoration: underline;
-          }
-
-          footer {
-            text-align: center;
-            margin: 20px 0;
-            font-size: 0.9rem;
-            color: #6c757d;
-          }
-
-          .card {
-            display: block;
-            width: 100%;
-            max-width: 800px;
-            background-color: #ffffff;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            margin: 10px 0;
-            padding: 20px;
-            text-align: center;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-decoration: none;
-            font-size: 1.2rem;
-            color: #343a40;
-          }
-
-          .card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-            color: #007bff;
-            text-decoration: none;
-          }
-
-          @media (max-width: 768px) {
-            h1 {
-              font-size: 2rem;
-            }
-
-            table th, table td {
-              font-size: 0.9rem;
-              padding: 10px;
-            }
-
-            .card {
-              font-size: 1rem;
-            }
-          }
-          EOF
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
