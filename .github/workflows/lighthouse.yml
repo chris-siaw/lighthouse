@@ -72,46 +72,41 @@ jobs:
           echo "seo=$SEO" >> $GITHUB_ENV
           echo "url=$URL" >> $GITHUB_ENV
 
-      - name: Update Main Page
+      - name: Regenerate Main Page
         run: |
-          # Create the file if it doesn't exist
-          if [ ! -f reports/index.html ]; then
-            echo "<html><head></head><body>" > reports/index.html
-            echo "<h1>Lighthouse Report Summary</h1><table border='1' cellspacing='0' cellpadding='5'>" >> reports/index.html
-            echo "<tr><th>Date</th><th>URL</th><th>Report Link</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/index.html
-          else
-            # Extract existing rows
-            awk '/<tr>/{flag=1} flag; /<\/table>/{flag=0}' reports/index.html > rows.temp
-          fi
-
-          # Start building the updated main page
+          # Start a new index.html
           echo "<html><head></head><body>" > reports/index.html
           echo "<h1>Lighthouse Report Summary</h1><table border='1' cellspacing='0' cellpadding='5'>" >> reports/index.html
           echo "<tr><th>Date</th><th>URL</th><th>Report Link</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/index.html
 
-          # Add the new row for the current report at the top
-          echo "<tr>" >> reports/index.html
-          echo "<td>${{ env.formatted_date }}</td>" >> reports/index.html
-          echo "<td><a href='${{ env.url }}' target='_blank'>${{ env.url }}</a></td>" >> reports/index.html
-          echo "<td><a href='./${{ env.timestamp }}/index.html' target='_blank'>View Report</a></td>" >> reports/index.html
-          echo "<td>${{ env.performance }}</td>" >> reports/index.html
-          echo "<td>${{ env.accessibility }}</td>" >> reports/index.html
-          echo "<td>${{ env.best_practices }}</td>" >> reports/index.html
-          echo "<td>${{ env.seo }}</td>" >> reports/index.html
-          echo "</tr>" >> reports/index.html
+          # Loop through all report folders and add rows
+          for folder in $(ls -d reports/*/ | grep -v "index.html" | sort -r); do
+            TIMESTAMP=$(basename $folder)
+            REPORT_FILE=$folder/index.html
+            REPORT_JSON=$(ls $folder/*.report.json)
 
-          # Add existing rows below
-          if [ -f rows.temp ]; then
-            cat rows.temp >> reports/index.html
-          fi
+            if [ -f "$REPORT_JSON" ]; then
+              PERFORMANCE=$(jq '.categories.performance.score * 100' $REPORT_JSON)
+              ACCESSIBILITY=$(jq '.categories.accessibility.score * 100' $REPORT_JSON)
+              BEST_PRACTICES=$(jq '.categories["best-practices"].score * 100' $REPORT_JSON)
+              SEO=$(jq '.categories.seo.score * 100' $REPORT_JSON)
+              URL=$(jq -r '.finalUrl' $REPORT_JSON)
+              FORMATTED_DATE=$(date -d "${TIMESTAMP//_/ }" +"%Y/%m/%d")
+
+              echo "<tr>" >> reports/index.html
+              echo "<td>${FORMATTED_DATE}</td>" >> reports/index.html
+              echo "<td><a href='${URL}' target='_blank'>${URL}</a></td>" >> reports/index.html
+              echo "<td><a href='./${TIMESTAMP}/index.html' target='_blank'>View Report</a></td>" >> reports/index.html
+              echo "<td>${PERFORMANCE}</td>" >> reports/index.html
+              echo "<td>${ACCESSIBILITY}</td>" >> reports/index.html
+              echo "<td>${BEST_PRACTICES}</td>" >> reports/index.html
+              echo "<td>${SEO}</td>" >> reports/index.html
+              echo "</tr>" >> reports/index.html
+            fi
+          done
 
           # Close the table and HTML
           echo "</table></body></html>" >> reports/index.html
-
-          # Clean up temporary file
-          if [ -f rows.temp ]; then
-            rm rows.temp
-          fi
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
