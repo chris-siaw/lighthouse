@@ -1,0 +1,2 @@
+# lighthouse
+Automating lighthouse tests
