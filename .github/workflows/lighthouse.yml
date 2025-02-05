@@ -76,8 +76,16 @@ jobs:
         run: |
           if [ ! -f reports/summary.html ]; then
             echo "<html><head><link rel='stylesheet' href='./style.css'></head><body><div class='container'>" > reports/summary.html
-            echo "<h1>Lighthouse Report Summary</h1><table>" >> reports/summary.html
+            echo "<h1>Lighthouse Report Summary</h1><table id='summaryTable'>" >> reports/summary.html
             echo "<tr><th>URL</th><th>Date</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/summary.html
+          else
+            awk '/<tr>/{flag=1} flag; /<\/table>/{flag=0}' reports/summary.html > rows.temp
+          fi
+          echo "<html><head><link rel='stylesheet' href='./style.css'></head><body><div class='container'>" > reports/summary.html
+          echo "<h1>Lighthouse Report Summary</h1><table id='summaryTable'>" >> reports/summary.html
+          echo "<tr><th>URL</th><th>Date</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/summary.html
+          if [ -f rows.temp ]; then
+            cat rows.temp >> reports/summary.html
           fi
           echo "<tr>" >> reports/summary.html
           echo "<td><a href='./${{ env.timestamp }}/index.html'>${{ env.url }}</a></td>" >> reports/summary.html
@@ -88,6 +96,9 @@ jobs:
           echo "<td>${{ env.seo }}</td>" >> reports/summary.html
           echo "</tr>" >> reports/summary.html
           echo "</table></div></body></html>" >> reports/summary.html
+          if [ -f rows.temp ]; then
+            rm rows.temp
+          fi
 
       - name: Update Index Page
         run: |
@@ -177,6 +188,29 @@ jobs:
             color: #6c757d;
           }
 
+          .card {
+            display: block;
+            width: 100%;
+            max-width: 800px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 10px 0;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            font-size: 1.2rem;
+            color: #343a40;
+          }
+
+          .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            color: #007bff;
+            text-decoration: none;
+          }
+
           @media (max-width: 768px) {
             h1 {
               font-size: 2rem;
@@ -185,6 +219,10 @@ jobs:
             table th, table td {
               font-size: 0.9rem;
               padding: 10px;
+            }
+
+            .card {
+              font-size: 1rem;
             }
           }
           EOF
