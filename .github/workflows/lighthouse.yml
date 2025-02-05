@@ -46,16 +46,37 @@ jobs:
           cd ./reports/${{ env.timestamp }}
           mv *.report.html index.html
 
-      - name: Update Index Page
+      - name: Extract Lighthouse Scores
+        id: extract_scores
         run: |
-          # Create index.html if it doesn't exist
-          if [ ! -f reports/index.html ]; then
-            echo "<html><body><h1>Lighthouse Reports</h1><ul>" > reports/index.html
+          REPORT_FILE=$(ls ./reports/${{ env.timestamp }}/*.report.json)
+          PERFORMANCE=$(jq '.categories.performance.score * 100' $REPORT_FILE)
+          ACCESSIBILITY=$(jq '.categories.accessibility.score * 100' $REPORT_FILE)
+          BEST_PRACTICES=$(jq '.categories["best-practices"].score * 100' $REPORT_FILE)
+          SEO=$(jq '.categories.seo.score * 100' $REPORT_FILE)
+          URL=$(jq -r '.finalUrl' $REPORT_FILE)
+
+          echo "performance=$PERFORMANCE" >> $GITHUB_ENV
+          echo "accessibility=$ACCESSIBILITY" >> $GITHUB_ENV
+          echo "best_practices=$BEST_PRACTICES" >> $GITHUB_ENV
+          echo "seo=$SEO" >> $GITHUB_ENV
+          echo "url=$URL" >> $GITHUB_ENV
+
+      - name: Update Summary Page
+        run: |
+          if [ ! -f reports/summary.html ]; then
+            echo "<html><body><h1>Lighthouse Report Summary</h1><table border='1'>" > reports/summary.html
+            echo "<tr><th>URL</th><th>Date and Time</th><th>Performance</th><th>Accessibility</th><th>Best Practices</th><th>SEO</th></tr>" >> reports/summary.html
           fi
-          # Add a link to the new report
-          echo "<li><a href='./${{ env.timestamp }}/index.html'>Report ${{ env.timestamp }}</a></li>" >> reports/index.html
-          # Close the HTML file
-          echo "</ul></body></html>" >> reports/index.html
+          echo "<tr>" >> reports/summary.html
+          echo "<td><a href='./${{ env.timestamp }}/index.html'>${{ env.url }}</a></td>" >> reports/summary.html
+          echo "<td>${{ env.timestamp }}</td>" >> reports/summary.html
+          echo "<td>${{ env.performance }}</td>" >> reports/summary.html
+          echo "<td>${{ env.accessibility }}</td>" >> reports/summary.html
+          echo "<td>${{ env.best_practices }}</td>" >> reports/summary.html
+          echo "<td>${{ env.seo }}</td>" >> reports/summary.html
+          echo "</tr>" >> reports/summary.html
+          echo "</table></body></html>" >> reports/summary.html
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
