@@ -1,0 +1,15 @@
+{
+  "ci": {
+    "collect": {
+      "url": ["https://www.lego.me/en-ae"],
+      "numberOfRuns": 1
+    },
+    "assert": {
+      "preset": "lighthouse:recommended"
+    },
+    "upload": {
+      "target": "filesystem",
+      "outputDir": "./lighthouse-results"
+    }
+  }
+}
