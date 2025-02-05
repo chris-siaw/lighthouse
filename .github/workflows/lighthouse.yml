@@ -3,7 +3,7 @@ name: Lighthouse CI
 on:
   push:
     branches:
-      - main  # Runs when you push to the main branch
+      - main
   schedule:
     - cron: "0 0 * * *"  # Runs daily at midnight UTC
   workflow_dispatch:  # Allows manual triggering
@@ -24,15 +24,37 @@ jobs:
       - name: Install Lighthouse CI
         run: npm install -g @lhci/cli
 
+      - name: Generate Timestamp for Report
+        id: timestamp
+        run: echo "timestamp=$(date +'%Y_%m_%d_%H_%M_%S')" >> $GITHUB_ENV
+
       - name: Run Lighthouse Audit
         run: |
           mkdir -p lighthouse-results
           lhci autorun --upload.target=filesystem --upload.outputDir=./lighthouse-results || echo "Lighthouse CI failed"
 
-      - name: Deploy Report to GitHub Pages
+      - name: Rename Lighthouse Results Directory
+        run: mv ./lighthouse-results ./lighthouse-results-${{ env.timestamp }}
+
+      - name: Prepare Reports Directory
+        run: |
+          mkdir -p reports
+          mv ./lighthouse-results-${{ env.timestamp }} ./reports/${{ env.timestamp }}
+
+      - name: Update Index Page
+        run: |
+          # Create index.html if it doesn't exist
+          if [ ! -f reports/index.html ]; then
+            echo "<html><body><h1>Lighthouse Reports</h1><ul>" > reports/index.html
+          fi
+          # Add a link to the new report
+          echo "<li><a href='./${{ env.timestamp }}/index.html'>Report ${{ env.timestamp }}</a></li>" >> reports/index.html
+          # Close the HTML file
+          echo "</ul></body></html>" >> reports/index.html
+
+      - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./lighthouse-results
+          publish_dir: ./reports
           publish_branch: gh-pages
-          force_orphan: true
