@@ -91,7 +91,9 @@ jobs:
               BEST_PRACTICES=$(jq '.categories["best-practices"].score * 100' $REPORT_JSON)
               SEO=$(jq '.categories.seo.score * 100' $REPORT_JSON)
               URL=$(jq -r '.finalUrl' $REPORT_JSON)
-              FORMATTED_DATE=$(date -d "${TIMESTAMP//_/ }" +"%Y/%m/%d")
+              
+              # Properly format the date
+              FORMATTED_DATE=$(echo $TIMESTAMP | sed 's/_/ /g' | awk '{print $1 "/" $2 "/" $3}')
 
               echo "<tr>" >> reports/index.html
               echo "<td>${FORMATTED_DATE}</td>" >> reports/index.html
