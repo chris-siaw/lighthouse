@@ -1,0 +1,14 @@
+[
+  {
+    "url": "https://www.lego.me/en-ae",
+    "isRepresentativeRun": true,
+    "htmlPath": "/home/runner/work/lighthouse/lighthouse/lighthouse-results/www_lego_me-_en_ae-2025_02_07_02_53_34.report.html",
+    "jsonPath": "/home/runner/work/lighthouse/lighthouse/lighthouse-results/www_lego_me-_en_ae-2025_02_07_02_53_34.report.json",
+    "summary": {
+      "performance": 0.25,
+      "accessibility": 0.78,
+      "best-practices": 0.68,
+      "seo": 0.77
+    }
+  }
+]
